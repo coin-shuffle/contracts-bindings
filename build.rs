@@ -1,36 +1,49 @@
 use ethers::{prelude::Abigen, solc::Solc};
 
-const UTXO_INTERFACE_PATH: &'static str = "./contracts/contracts/interfaces/IUTXO.sol";
-const UTXO_INTERFACE_NAME: &'static str = "IUTXO";
+const UTXO_INTERFACE_CONTRACT: &'static str = "IUTXO";
+const INTERFACES_PATH: &'static str = "./contracts/contracts/interfaces";
 
 fn main() -> eyre::Result<()> {
-    let contracts = [(UTXO_INTERFACE_PATH, UTXO_INTERFACE_NAME)];
-
-    for (contract_name, contract_path) in contracts {
-        generate_contract(contract_name, contract_path)?;
-    }
+    generate_contracts(
+        &[
+            UTXO_INTERFACE_CONTRACT, // Add more contracts here
+        ],
+        INTERFACES_PATH,
+    )?;
 
     Ok(())
 }
 
-fn generate_contract(name: &str, path: &str) -> eyre::Result<()> {
-    let out_file = format!("{}/{}.rs", std::env::var("OUT_DIR")?, name);
+fn generate_contracts(contracts_names: &[&str], path: &str) -> eyre::Result<()> {
+    let out_dir = std::env::var("OUT_DIR")?;
 
-    let contract_name = name;
-    let contract = path;
+    let contracts = Solc::default().compile_source(path)?;
 
-    let contracts = Solc::default().compile_source(&contract)?;
-    let abi = contracts
-        .get(&contract, &contract_name)
-        .expect(format!("failed to get contract by name: {}", contract_name).as_str())
-        .abi
-        .expect("failed to get contract abi");
+    for contract_name in contracts_names {
+        let contract_path = format!("{}/{}.sol", path, contract_name);
 
-    let abi = serde_json::to_string(abi)?;
+        let abi = contracts
+            .get(&contract_path, &contract_name)
+            .ok_or(eyre::eyre!(
+                "Contract not found: name={} path={}",
+                contract_name,
+                contract_path
+            ))?
+            .abi
+            .ok_or(eyre::eyre!(
+                "Contract abi not found: name={} path={}",
+                contract_name,
+                contract_path
+            ))?;
 
-    Abigen::new(&contract_name, abi)?
-        .generate()?
-        .write_to_file(out_file)?;
+        let abi = serde_json::to_string(abi)?;
+
+        let out_file = format!("{}/{}.rs", out_dir, contract_name);
+
+        Abigen::new(&contract_name, abi)?
+            .generate()?
+            .write_to_file(out_file)?;
+    }
 
     Ok(())
 }
