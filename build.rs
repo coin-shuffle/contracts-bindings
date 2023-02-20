@@ -4,17 +4,27 @@ const UTXO_INTERFACE_PATH: &'static str = "./contracts/contracts/interfaces/IUTX
 const UTXO_INTERFACE_NAME: &'static str = "IUTXO";
 
 fn main() -> eyre::Result<()> {
-    let out_file = format!("{}/{}.rs", std::env::var("OUT_DIR")?, UTXO_INTERFACE_NAME);
+    let contracts = [(UTXO_INTERFACE_PATH, UTXO_INTERFACE_NAME)];
 
-    let contract_name = UTXO_INTERFACE_NAME;
-    let contract = UTXO_INTERFACE_PATH;
+    for (contract_name, contract_path) in contracts {
+        generate_contract(contract_name, contract_path)?;
+    }
+
+    Ok(())
+}
+
+fn generate_contract(name: &str, path: &str) -> eyre::Result<()> {
+    let out_file = format!("{}/{}.rs", std::env::var("OUT_DIR")?, name);
+
+    let contract_name = name;
+    let contract = path;
 
     let contracts = Solc::default().compile_source(&contract)?;
     let abi = contracts
         .get(&contract, &contract_name)
-        .unwrap()
+        .expect(format!("failed to get contract by name: {}", contract_name).as_str())
         .abi
-        .unwrap();
+        .expect("failed to get contract abi");
 
     let abi = serde_json::to_string(abi)?;
 
