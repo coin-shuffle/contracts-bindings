@@ -1,15 +1,18 @@
 [package]
-name = "coin-shuffle-contracts-bindings"
+name    = "coin-shuffle-contracts-bindings"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-trait = "0.1.64"
-ethers = "1.0.2"
+async-trait = { version = "0.1.64" }
+ethers      = { version = "1.0.2" }
+thiserror   = { version = "1.0.38" }
+rustc-hex   = { version = "2.1.0" }
+url         = { version = "2.3.1" }
 
 [build-dependencies]
-eyre = "0.6.8"
-ethers = { version = "1.0", features = ["abigen", "ethers-solc"] }
+eyre       = "0.6.8"
+ethers     = { version = "1.0", features = ["abigen", "ethers-solc"] }
 serde_json = "1.0"
