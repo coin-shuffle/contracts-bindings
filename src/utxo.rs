@@ -1,5 +1,4 @@
-use crate::macros;
-use crate::utxo::Error::FailedToGetUTXOById;
+use ethers::abi::Hash;
 use ethers::contract::ContractError;
 use ethers::core::types::Address;
 use ethers::prelude::{LocalWallet, SignerMiddleware};
@@ -10,6 +9,8 @@ use rustc_hex::FromHexError;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use crate::macros;
+
 macros::include_contract!("IUTXO");
 
 #[async_trait::async_trait]
@@ -19,24 +20,6 @@ pub trait Contract {
     async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Utxo, Self::Error>;
     async fn transfer(&self, inputs: Vec<Input>, outputs: Vec<Output>)
         -> Result<H256, Self::Error>;
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum Error<M: Middleware> {
-    #[error("failed to parse address: {0}")]
-    FailedToParseAddress(#[from] FromHexError),
-
-    #[error("failed to parse service url: {0}")]
-    FailedToParseServiceURL(#[from] url::ParseError),
-
-    #[error("failed to parse private key: {0}")]
-    FailedToParsePrivateKey(#[from] WalletError),
-
-    #[error("failed to get utxo by id: {0}")]
-    FailedToGetUTXOById(ContractError<M>),
-
-    #[error("failed to do transfer: {0}")]
-    FailedToTransfer(ContractError<M>),
 }
 
 #[derive(Debug, Clone)]
@@ -82,11 +65,12 @@ impl Contract for Connector<Provider<Http>> {
             .get_utxo_by_id(utxo_id)
             .call()
             .await
-            .map_err(FailedToGetUTXOById)
+            .map_err(Error::GetUTXOById)
     }
 
     /// # Panics
-    /// Private key is not set for this method. Use self.with_priv_key()
+    ///
+    /// Private key is not set for this method. Use Connector::with_priv_key()
     async fn transfer(&self, _: Vec<Input>, _: Vec<Output>) -> Result<H256, Self::Error> {
         unimplemented!()
     }
@@ -101,20 +85,37 @@ impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
             .get_utxo_by_id(utxo_id)
             .call()
             .await
-            .map_err(FailedToGetUTXOById)
+            .map_err(Error::GetUTXOById)
     }
 
     async fn transfer(
         &self,
         inputs: Vec<Input>,
         outputs: Vec<Output>,
-    ) -> Result<H256, Self::Error> {
-        Ok(self
+    ) -> Result<Hash, Self::Error> {
+        Ok(*self
             .utxo_contract
             .transfer(inputs, outputs)
             .send()
             .await
-            .map_err(Error::FailedToTransfer)?
-            .clone())
+            .map_err(Error::Transfer)?)
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error<M: Middleware> {
+    #[error("failed to parse address: {0}")]
+    ParseAddress(#[from] FromHexError),
+
+    #[error("failed to parse service url: {0}")]
+    ParseServiceURL(#[from] url::ParseError),
+
+    #[error("failed to parse private key: {0}")]
+    ParsePrivateKey(#[from] WalletError),
+
+    #[error("failed to get utxo by id: {0}")]
+    GetUTXOById(ContractError<M>),
+
+    #[error("failed to do transfer: {0}")]
+    Transfer(ContractError<M>),
 }

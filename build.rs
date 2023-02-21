@@ -1,7 +1,7 @@
 use ethers::{prelude::Abigen, solc::Solc};
 
-const UTXO_INTERFACE_CONTRACT: &'static str = "IUTXO";
-const INTERFACES_PATH: &'static str = "./contracts/contracts/interfaces";
+const UTXO_INTERFACE_CONTRACT: &str = "IUTXO";
+const INTERFACES_PATH: &str = "./contracts/contracts/interfaces";
 
 fn main() -> eyre::Result<()> {
     generate_contracts(
@@ -23,7 +23,7 @@ fn generate_contracts(contracts_names: &[&str], path: &str) -> eyre::Result<()> 
         let contract_path = format!("{}/{}.sol", path, contract_name);
 
         let abi = contracts
-            .get(&contract_path, &contract_name)
+            .get(&contract_path, contract_name)
             .ok_or(eyre::eyre!(
                 "Contract not found: name={} path={}",
                 contract_name,
