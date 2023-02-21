@@ -40,7 +40,7 @@ fn generate_contracts(contracts_names: &[&str], path: &str) -> eyre::Result<()> 
 
         let out_file = format!("{}/{}.rs", out_dir, contract_name);
 
-        Abigen::new(&contract_name, abi)?
+        Abigen::new(contract_name.to_owned(), abi)?
             .generate()?
             .write_to_file(out_file)?;
     }
