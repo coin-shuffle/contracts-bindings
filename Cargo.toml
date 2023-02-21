@@ -1,5 +1,5 @@
 [package]
-name = "coin-shuffle-contracts-bindings"
+name    = "coin-shuffle-contracts-bindings"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,6 +7,9 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.64"
+thiserror   = { version = "1.0.38" }
+rustc-hex   = { version = "2.1.0" }
+url         = { version = "2.3.1" }
 
 [dependencies.ethers]
 git = "https://github.com/gakonst/ethers-rs.git"
