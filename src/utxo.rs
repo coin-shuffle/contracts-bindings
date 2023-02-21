@@ -17,7 +17,7 @@ macros::include_contract!("IUTXO");
 pub trait Contract {
     type Error: std::error::Error;
 
-    async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Utxo, Self::Error>;
+    async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error>;
     async fn transfer(&self, inputs: Vec<Input>, outputs: Vec<Output>)
         -> Result<H256, Self::Error>;
 }
@@ -56,16 +56,26 @@ impl Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     }
 }
 
+/// Error returned by the contract if utxo is not found
+///
+/// TODO: Find more elegant way to handle this
+const UTXO_NOT_FOUND: &str = "UTXO doesn't exist";
+
 #[async_trait::async_trait]
 impl Contract for Connector<Provider<Http>> {
     type Error = Error<Provider<Http>>;
 
-    async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Utxo, Self::Error> {
-        self.utxo_contract
-            .get_utxo_by_id(utxo_id)
-            .call()
-            .await
-            .map_err(Error::GetUTXOById)
+    async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error> {
+        let err = match self.utxo_contract.get_utxo_by_id(utxo_id).call().await {
+            Ok(utxo) => return Ok(Some(utxo)),
+            Err(err) => err,
+        };
+
+        if format!("{}", err).contains(UTXO_NOT_FOUND) {
+            return Ok(None);
+        }
+
+        Err(Error::GetUTXOById(err))
     }
 
     /// # Panics
@@ -80,12 +90,17 @@ impl Contract for Connector<Provider<Http>> {
 impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     type Error = Error<SignerMiddleware<Provider<Http>, LocalWallet>>;
 
-    async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Utxo, Self::Error> {
-        self.utxo_contract
-            .get_utxo_by_id(utxo_id)
-            .call()
-            .await
-            .map_err(Error::GetUTXOById)
+    async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error> {
+        let err = match self.utxo_contract.get_utxo_by_id(utxo_id).call().await {
+            Ok(utxo) => return Ok(Some(utxo)),
+            Err(err) => err,
+        };
+
+        if format!("{}", err).contains(UTXO_NOT_FOUND) {
+            return Ok(None);
+        }
+
+        Err(Error::GetUTXOById(err))
     }
 
     async fn transfer(
