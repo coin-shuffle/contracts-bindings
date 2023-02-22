@@ -1,6 +1,6 @@
-use ethers::{
-    core::types::{Address, U256},
+use ethers_core::{
     types::Bytes,
+    types::{Address, U256},
 };
 
 use super::iutxo;
