@@ -1,4 +1,5 @@
-use ethers::{prelude::Abigen, solc::Solc};
+use ethers_contract::Abigen;
+use ethers_solc::Solc;
 
 const UTXO_INTERFACE_CONTRACT: &str = "IUTXO";
 const INTERFACES_PATH: &str = "./contracts/contracts/interfaces";

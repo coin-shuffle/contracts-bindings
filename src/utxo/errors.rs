@@ -1,6 +1,6 @@
-use ethers::contract::ContractError;
-use ethers::providers::Middleware;
-use ethers::signers::WalletError;
+use ethers_contract::ContractError;
+use ethers_providers::Middleware;
+use ethers_signers::WalletError;
 use rustc_hex::FromHexError;
 
 #[derive(thiserror::Error, Debug)]

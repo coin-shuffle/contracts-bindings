@@ -2,18 +2,19 @@ pub mod errors;
 pub mod iutxo;
 pub mod types;
 
-use ethers::abi::Hash;
-use ethers::core::types::Address;
-use ethers::prelude::{LocalWallet, SignerMiddleware};
-use ethers::providers::{Http, Middleware, Provider};
-use ethers::types::{H256, U256};
+use ethers_core::abi::Hash;
+use ethers_core::types::Address;
+use ethers_core::types::{H256, U256};
+use ethers_middleware::SignerMiddleware;
+use ethers_providers::{Http, Middleware, Provider};
+use ethers_signers::LocalWallet;
 use std::str::FromStr;
 use std::sync::Arc;
 
 use self::errors::Error;
 use self::types::{Input, Output, Utxo};
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait Contract {
     type Error: std::error::Error;
 
@@ -61,7 +62,7 @@ impl Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
 /// TODO: Find more elegant way to handle this
 const UTXO_NOT_FOUND: &str = "UTXO doesn't exist";
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Contract for Connector<Provider<Http>> {
     type Error = Error<Provider<Http>>;
 
@@ -86,7 +87,7 @@ impl Contract for Connector<Provider<Http>> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     type Error = Error<SignerMiddleware<Provider<Http>, LocalWallet>>;
 
