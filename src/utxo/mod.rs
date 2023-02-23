@@ -61,13 +61,24 @@ where
 }
 
 impl Connector<Provider<Http>> {
-    pub fn new(rpc_url: String, address: String) -> Result<Self, Error<Provider<Http>>> {
-        let utxo_contract = iutxo::IUTXO::new(
-            Address::from_str(address.as_str())?,
-            Arc::new(Provider::<Http>::try_from(rpc_url.as_str())?),
-        );
+    pub fn from_raw(rpc_url: String, address: String) -> Result<Self, Error<Provider<Http>>> {
+        let address = Address::from_str(&address)?;
+        let rpc_url = rpc_url.parse()?;
 
-        Ok(Self { utxo_contract })
+        Ok(Self::new(rpc_url, address))
+    }
+
+    pub fn new(rpc_url: url::Url, address: Address) -> Self {
+        let provider = Provider::new(Http::new(rpc_url));
+        let utxo_contract = iutxo::IUTXO::new(address, Arc::new(provider));
+
+        Self { utxo_contract }
+    }
+
+    pub fn with_provider(address: Address, provider: Arc<Provider<Http>>) -> Self {
+        let utxo_contract = iutxo::IUTXO::new(address, provider);
+
+        Self { utxo_contract }
     }
 }
 
