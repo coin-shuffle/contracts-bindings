@@ -17,6 +17,9 @@ pub enum Error<M: Middleware> {
     #[error("failed to get utxo by id: {0}")]
     GetUTXOById(ContractError<M>),
 
+    #[error("failed to do list utxos: {0}")]
+    ListUTXO(ContractError<M>),
+
     #[error("failed to do transfer: {0}")]
     Transfer(ContractError<M>),
 }

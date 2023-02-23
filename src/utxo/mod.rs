@@ -19,6 +19,14 @@ pub trait Contract {
     type Error: std::error::Error;
 
     async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error>;
+
+    async fn list_utxos_by_address(
+        &self,
+        address: Address,
+        offset: u128,
+        limit: u128,
+    ) -> Result<Vec<Utxo>, Self::Error>;
+
     async fn transfer(&self, inputs: Vec<Input>, outputs: Vec<Output>)
         -> Result<H256, Self::Error>;
 }
@@ -26,6 +34,30 @@ pub trait Contract {
 #[derive(Debug, Clone)]
 pub struct Connector<M: Middleware> {
     utxo_contract: iutxo::IUTXO<M>,
+}
+
+impl<M> Connector<M>
+where
+    M: Middleware,
+{
+    async fn utxos_by_address(
+        &self,
+        address: Address,
+        offset: u128,
+        limit: u128,
+    ) -> Result<Vec<Utxo>, Error<M>> {
+        let utxos = self
+            .utxo_contract
+            .list_utx_os_by_address(address, U256::from(offset), U256::from(limit))
+            .call()
+            .await
+            .map_err(|err| Error::ListUTXO(err))?;
+
+        Ok(utxos
+            .into_iter()
+            .map(|utxo| utxo.into())
+            .collect::<Vec<Utxo>>())
+    }
 }
 
 impl Connector<Provider<Http>> {
@@ -79,6 +111,15 @@ impl Contract for Connector<Provider<Http>> {
         Err(Error::GetUTXOById(err))
     }
 
+    async fn list_utxos_by_address(
+        &self,
+        address: Address,
+        offset: u128,
+        limit: u128,
+    ) -> Result<Vec<Utxo>, Self::Error> {
+        self.utxos_by_address(address, offset, limit).await
+    }
+
     /// # Panics
     ///
     /// Private key is not set for this method. Use Connector::with_priv_key()
@@ -102,6 +143,15 @@ impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
         }
 
         Err(Error::GetUTXOById(err))
+    }
+
+    async fn list_utxos_by_address(
+        &self,
+        address: Address,
+        offset: u128,
+        limit: u128,
+    ) -> Result<Vec<Utxo>, Self::Error> {
+        self.utxos_by_address(address, offset, limit).await
     }
 
     async fn transfer(
