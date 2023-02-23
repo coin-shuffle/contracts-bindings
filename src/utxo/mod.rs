@@ -2,12 +2,16 @@ pub mod errors;
 pub mod iutxo;
 pub mod types;
 
+use ethers_contract::ContractError;
+use ethers_contract::EthError;
 use ethers_core::abi::Hash;
 use ethers_core::types::Address;
+use ethers_core::types::Selector;
 use ethers_core::types::{H256, U256};
 use ethers_middleware::SignerMiddleware;
 use ethers_providers::{Http, Middleware, Provider};
 use ethers_signers::LocalWallet;
+use std::io::Read;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -58,6 +62,33 @@ where
             .map(|utxo| utxo.into())
             .collect::<Vec<Utxo>>())
     }
+
+    async fn utxos_by_id(&self, id: U256) -> Result<Option<Utxo>, Error<M>> {
+        let err = match self.utxo_contract.get_utxo_by_id(id).call().await {
+            Ok(utxo) => return Ok(Some(utxo.into())),
+            Err(err) => err,
+        };
+
+        if Self::is_revert_reason(&err, iutxo::UtxoNotFound::selector()) {
+            Ok(None)
+        } else {
+            Err(Error::GetUTXOById(err))
+        }
+    }
+
+    /// compare selector with the first 4 bytes of the revert reason
+    fn is_revert_reason(err: &ContractError<M>, selector: Selector) -> bool {
+        if let ContractError::Revert(bytes) = err {
+            for i in 0..selector.len() {
+                if bytes[i] != selector[i] {
+                    return false;
+                }
+            }
+            true
+        } else {
+            false
+        }
+    }
 }
 
 impl Connector<Provider<Http>> {
@@ -100,26 +131,12 @@ impl Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     }
 }
 
-/// Error returned by the contract if utxo is not found
-///
-/// TODO: Find more elegant way to handle this
-const UTXO_NOT_FOUND: &str = "UTXO doesn't exist";
-
 #[async_trait::async_trait(?Send)]
 impl Contract for Connector<Provider<Http>> {
     type Error = Error<Provider<Http>>;
 
     async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error> {
-        let err = match self.utxo_contract.get_utxo_by_id(utxo_id).call().await {
-            Ok(utxo) => return Ok(Some(utxo.into())),
-            Err(err) => err,
-        };
-
-        if format!("{}", err).contains(UTXO_NOT_FOUND) {
-            return Ok(None);
-        }
-
-        Err(Error::GetUTXOById(err))
+        self.utxos_by_id(utxo_id).await
     }
 
     async fn list_utxos_by_address(
@@ -144,16 +161,7 @@ impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     type Error = Error<SignerMiddleware<Provider<Http>, LocalWallet>>;
 
     async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error> {
-        let err = match self.utxo_contract.get_utxo_by_id(utxo_id).call().await {
-            Ok(utxo) => return Ok(Some(utxo.into())),
-            Err(err) => err,
-        };
-
-        if format!("{}", err).contains(UTXO_NOT_FOUND) {
-            return Ok(None);
-        }
-
-        Err(Error::GetUTXOById(err))
+        self.utxos_by_id(utxo_id).await
     }
 
     async fn list_utxos_by_address(
