@@ -21,9 +21,9 @@ impl From<iutxo::Output> for Output {
     }
 }
 
-impl Into<iutxo::Output> for Output {
-    fn into(self) -> iutxo::Output {
-        iutxo::Output(self.amount, self.owner)
+impl From<Output> for iutxo::Output {
+    fn from(output: Output) -> Self {
+        Self(output.amount, output.owner)
     }
 }
 
@@ -43,9 +43,9 @@ impl From<iutxo::Input> for Input {
     }
 }
 
-impl Into<iutxo::Input> for Input {
-    fn into(self) -> iutxo::Input {
-        iutxo::Input(self.id, self.signature)
+impl From<Input> for iutxo::Input {
+    fn from(input: Input) -> Self {
+        Self(input.id, input.signature)
     }
 }
 
@@ -71,8 +71,8 @@ impl From<iutxo::Utxo> for Utxo {
     }
 }
 
-impl Into<iutxo::Utxo> for Utxo {
-    fn into(self) -> iutxo::Utxo {
-        iutxo::Utxo(self.id, self.token, self.amount, self.owner, self.is_spent)
+impl From<Utxo> for iutxo::Utxo {
+    fn from(utxo: Utxo) -> Self {
+        Self(utxo.id, utxo.token, utxo.amount, utxo.owner, utxo.is_spent)
     }
 }

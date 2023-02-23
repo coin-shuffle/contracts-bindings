@@ -36,6 +36,30 @@ pub struct Connector<M: Middleware> {
     utxo_contract: iutxo::IUTXO<M>,
 }
 
+impl<M> Connector<M>
+where
+    M: Middleware,
+{
+    async fn utxos_by_address(
+        &self,
+        address: Address,
+        offset: u128,
+        limit: u128,
+    ) -> Result<Vec<Utxo>, Error<M>> {
+        let utxos = self
+            .utxo_contract
+            .list_utx_os_by_address(address, U256::from(offset), U256::from(limit))
+            .call()
+            .await
+            .map_err(|err| Error::ListUTXO(err))?;
+
+        Ok(utxos
+            .into_iter()
+            .map(|utxo| utxo.into())
+            .collect::<Vec<Utxo>>())
+    }
+}
+
 impl Connector<Provider<Http>> {
     pub fn new(rpc_url: String, address: String) -> Result<Self, Error<Provider<Http>>> {
         let utxo_contract = iutxo::IUTXO::new(
@@ -93,17 +117,7 @@ impl Contract for Connector<Provider<Http>> {
         offset: u128,
         limit: u128,
     ) -> Result<Vec<Utxo>, Self::Error> {
-        let utxos = self
-            .utxo_contract
-            .list_utx_os_by_address(address, U256::from(offset), U256::from(limit))
-            .call()
-            .await
-            .map_err(|err| Error::ListUTXO(err))?;
-
-        Ok(utxos
-            .into_iter()
-            .map(|utxo| utxo.into())
-            .collect::<Vec<Utxo>>())
+        self.utxos_by_address(address, offset, limit).await
     }
 
     /// # Panics
@@ -137,17 +151,7 @@ impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
         offset: u128,
         limit: u128,
     ) -> Result<Vec<Utxo>, Self::Error> {
-        let utxos = self
-            .utxo_contract
-            .list_utx_os_by_address(address, U256::from(offset), U256::from(limit))
-            .call()
-            .await
-            .map_err(|err| Error::ListUTXO(err))?;
-
-        Ok(utxos
-            .into_iter()
-            .map(|utxo| utxo.into())
-            .collect::<Vec<Utxo>>())
+        self.utxos_by_address(address, offset, limit).await
     }
 
     async fn transfer(
