@@ -20,6 +20,13 @@ fn generate_contracts(contracts_names: &[&str], path: &str) -> eyre::Result<()> 
 
     let contracts = Solc::default().compile_source(path)?;
 
+    if contracts.has_error() {
+        return Err(eyre::eyre!(
+            "Failed to compile contracts: {:?}",
+            contracts.errors
+        ));
+    }
+
     for contract_name in contracts_names {
         let contract_path = format!("{}/{}.sol", path, contract_name);
 
