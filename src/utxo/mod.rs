@@ -2,6 +2,7 @@ pub mod errors;
 pub mod iutxo;
 pub mod types;
 
+use async_trait::async_trait;
 use ethers_contract::ContractError;
 use ethers_contract::EthError;
 use ethers_core::abi::Hash;
@@ -11,14 +12,14 @@ use ethers_core::types::{H256, U256};
 use ethers_middleware::SignerMiddleware;
 use ethers_providers::{Http, Middleware, Provider};
 use ethers_signers::LocalWallet;
-use std::io::Read;
 use std::str::FromStr;
 use std::sync::Arc;
 
 use self::errors::Error;
 use self::types::{Input, Output, Utxo};
 
-#[async_trait::async_trait(?Send)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait Contract {
     type Error: std::error::Error;
 
@@ -131,7 +132,8 @@ impl Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl Contract for Connector<Provider<Http>> {
     type Error = Error<Provider<Http>>;
 
@@ -156,7 +158,8 @@ impl Contract for Connector<Provider<Http>> {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     type Error = Error<SignerMiddleware<Provider<Http>, LocalWallet>>;
 
