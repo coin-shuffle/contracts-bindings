@@ -18,8 +18,8 @@ use std::sync::Arc;
 use self::errors::Error;
 use self::types::{Input, Output, Utxo};
 
-#[cfg_attr(feature = "wasm", async_trait(?Send))]
-#[cfg_attr(not(feature = "wasm"), async_trait(?Send))]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait Contract {
     type Error: std::error::Error;
 
@@ -132,8 +132,8 @@ impl Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     }
 }
 
-#[cfg_attr(feature = "wasm", async_trait(?Send))]
-#[cfg_attr(not(feature = "wasm"), async_trait(?Send))]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl Contract for Connector<Provider<Http>> {
     type Error = Error<Provider<Http>>;
 
@@ -158,8 +158,8 @@ impl Contract for Connector<Provider<Http>> {
     }
 }
 
-#[cfg_attr(feature = "wasm", async_trait(?Send))]
-#[cfg_attr(not(feature = "wasm"), async_trait(?Send))]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     type Error = Error<SignerMiddleware<Provider<Http>, LocalWallet>>;
 
