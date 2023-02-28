@@ -15,6 +15,7 @@ use ethers_signers::LocalWallet;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use self::errors::ConnectorWithSignerError;
 use self::errors::Error;
 use self::types::{Input, Output, Utxo};
 
@@ -115,17 +116,20 @@ impl Connector<Provider<Http>> {
 }
 
 impl Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
-    pub fn with_priv_key(
+    pub async fn with_priv_key(
         rpc_url: String,
         address: String,
         priv_key: String,
-    ) -> Result<Self, Error<SignerMiddleware<Provider<Http>, LocalWallet>>> {
+    ) -> Result<Self, ConnectorWithSignerError<Provider<Http>, LocalWallet>> {
         let utxo_contract = iutxo::IUTXO::new(
             Address::from_str(address.as_str())?,
-            Arc::new(SignerMiddleware::new(
-                Provider::<Http>::try_from(rpc_url.as_str())?,
-                LocalWallet::from_str(priv_key.as_str())?,
-            )),
+            Arc::new(
+                SignerMiddleware::new_with_provider_chain(
+                    Provider::<Http>::try_from(rpc_url.as_str())?,
+                    LocalWallet::from_str(priv_key.as_str())?,
+                )
+                .await?,
+            ),
         );
 
         Ok(Self { utxo_contract })
