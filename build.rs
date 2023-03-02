@@ -5,17 +5,19 @@ const UTXO_INTERFACE_CONTRACT: &str = "IUTXO";
 const INTERFACES_PATH: &str = "./contracts/contracts/interfaces";
 
 fn main() -> eyre::Result<()> {
-    generate_contracts(
+    compile_contract(
         &[
             UTXO_INTERFACE_CONTRACT, // Add more contracts here
         ],
         INTERFACES_PATH,
     )?;
 
+    generate_from_abi("IERC20", include_str!("./abis/IERC20.abi"))?;
+
     Ok(())
 }
 
-fn generate_contracts(contracts_names: &[&str], path: &str) -> eyre::Result<()> {
+fn compile_contract(contracts_names: &[&str], path: &str) -> eyre::Result<()> {
     let out_dir = std::env::var("OUT_DIR")?;
 
     let contracts = Solc::default().compile_source(path)?;
@@ -52,6 +54,18 @@ fn generate_contracts(contracts_names: &[&str], path: &str) -> eyre::Result<()> 
             .generate()?
             .write_to_file(out_file)?;
     }
+
+    Ok(())
+}
+
+fn generate_from_abi(contract_name: &str, abi: &str) -> eyre::Result<()> {
+    let out_dir = std::env::var("OUT_DIR")?;
+
+    let out_file = format!("{}/{}.rs", out_dir, contract_name);
+
+    Abigen::new(contract_name.to_owned(), abi.to_owned())?
+        .generate()?
+        .write_to_file(out_file)?;
 
     Ok(())
 }
