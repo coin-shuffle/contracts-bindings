@@ -29,8 +29,8 @@ pub trait Contract {
     async fn list_utxos_by_address(
         &self,
         address: Address,
-        offset: u128,
-        limit: u128,
+        offset: U256,
+        limit: U256,
     ) -> Result<Vec<Utxo>, Self::Error>;
 
     async fn utxo_length(&self) -> Result<U256, Self::Error>;
@@ -51,8 +51,8 @@ where
     async fn utxos_by_address(
         &self,
         address: Address,
-        offset: u128,
-        limit: u128,
+        offset: U256,
+        limit: U256,
     ) -> Result<Vec<Utxo>, Error<M>> {
         let utxos = self
             .utxo_contract
@@ -158,8 +158,8 @@ impl Contract for Connector<Provider<Http>> {
     async fn list_utxos_by_address(
         &self,
         address: Address,
-        offset: u128,
-        limit: u128,
+        offset: U256,
+        limit: U256,
     ) -> Result<Vec<Utxo>, Self::Error> {
         self.utxos_by_address(address, offset, limit).await
     }
@@ -192,8 +192,8 @@ impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     async fn list_utxos_by_address(
         &self,
         address: Address,
-        offset: u128,
-        limit: u128,
+        offset: U256,
+        limit: U256,
     ) -> Result<Vec<Utxo>, Self::Error> {
         self.utxos_by_address(address, offset, limit).await
     }
