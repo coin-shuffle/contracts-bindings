@@ -33,6 +33,8 @@ pub trait Contract {
         limit: u128,
     ) -> Result<Vec<Utxo>, Self::Error>;
 
+    async fn utxo_length(&self) -> Result<U256, Self::Error>;
+
     async fn transfer(&self, inputs: Vec<Input>, outputs: Vec<Output>)
         -> Result<H256, Self::Error>;
 }
@@ -90,6 +92,14 @@ where
         } else {
             false
         }
+    }
+
+    async fn utxo_length(&self) -> Result<U256, Error<M>> {
+        self.utxo_contract
+            .get_utx_os_length()
+            .call()
+            .await
+            .map_err(Error::UtxoLength)
     }
 }
 
@@ -154,6 +164,10 @@ impl Contract for Connector<Provider<Http>> {
         self.utxos_by_address(address, offset, limit).await
     }
 
+    async fn utxo_length(&self) -> Result<U256, Self::Error> {
+        self.utxo_length().await
+    }
+
     /// # Panics
     ///
     /// Private key is not set for this method. Use Connector::with_priv_key()
@@ -169,6 +183,10 @@ impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
 
     async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error> {
         self.utxos_by_id(utxo_id).await
+    }
+
+    async fn utxo_length(&self) -> Result<U256, Self::Error> {
+        self.utxo_length().await
     }
 
     async fn list_utxos_by_address(

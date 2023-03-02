@@ -21,6 +21,9 @@ pub enum Error<M: Middleware> {
     #[error("failed to do list utxos: {0}")]
     ListUTXO(ContractError<M>),
 
+    #[error("failed to get length of accounts: {0}")]
+    UtxoLength(ContractError<M>),
+
     #[error("failed to do transfer: {0}")]
     Transfer(ContractError<M>),
 }
