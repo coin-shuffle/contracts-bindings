@@ -15,39 +15,17 @@ thiserror   = { version = "1.0.38" }
 rustc-hex   = { version = "2.1.0" }
 url         = { version = "2.3.1" }
 serde       = { version = "1.0.152", features = ["derive"], optional = true }
-
-[dependencies.ethers-middleware]
-git = "https://github.com/gakonst/ethers-rs.git"
-branch = "master"
-default-features = false
-
-[dependencies.ethers-signers]
-git = "https://github.com/gakonst/ethers-rs.git"
-branch = "master"
-
-[dependencies.ethers-providers]
-git = "https://github.com/gakonst/ethers-rs.git"
-branch = "master"
-
-[dependencies.ethers-core]
-git = "https://github.com/gakonst/ethers-rs.git"
-branch = "master"
-
-[dependencies.ethers-contract]
-git = "https://github.com/gakonst/ethers-rs.git"
-branch = "master"
-
-[build-dependencies.ethers-contract]
-git = "https://github.com/gakonst/ethers-rs.git"
-branch = "master"
-
-[build-dependencies.ethers-solc]
-git = "https://github.com/gakonst/ethers-rs.git"
-branch = "master"
+ethers-contract = { version = "2" }
+ethers-core = { version = "2" }
+ethers-providers = { version = "2" }
+ethers-middleware = { version = "2", default-features = false }
+ethers-signers = { version = "2" }
 
 [build-dependencies]
 eyre = "0.6.8"
 serde_json = "1.0"
+ethers-solc = "2"
+ethers-contract = "2"
 
 [dev-dependencies]
 tokio = { version = "1.14.0", features = ["test-util", "macros"] }
