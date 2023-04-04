@@ -1,3 +1,4 @@
 [submodule "contracts"]
 	path = contracts
 	url = git@github.com:coin-shuffle/core-contracts.git
+	branch = v1.1.0
