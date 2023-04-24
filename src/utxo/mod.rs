@@ -19,14 +19,14 @@ use self::errors::ConnectorWithSignerError;
 use self::errors::Error;
 use self::types::{Input, Output, Utxo};
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(target_arch = "wasm32", async_trait(? Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait Contract {
     type Error: std::error::Error;
 
     async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error>;
 
-    async fn deposit(&self, token_address: Address, amount: U256, owner: Address) -> Result<H256, Self::Error>;
+    async fn deposit(&self, token_address: Address, data: Output) -> Result<(), Self::Error>;
 
     async fn list_utxos_by_address(
         &self,
@@ -36,7 +36,7 @@ pub trait Contract {
     ) -> Result<Vec<Utxo>, Self::Error>;
 
     async fn transfer(&self, inputs: Vec<Input>, outputs: Vec<Output>)
-        -> Result<H256, Self::Error>;
+                      -> Result<H256, Self::Error>;
 }
 
 #[derive(Debug, Clone)]
@@ -45,20 +45,17 @@ pub struct Connector<M: Middleware> {
 }
 
 impl<M> Connector<M>
-where
-    M: Middleware,
+    where
+        M: Middleware,
 {
-
-    async fn deposit(&self, token_address: Address, amount: U256, owner: Address) -> Result<Vec<M>, Self::Error> {
-            let value = vec!(Output(amount, owner));
-            let result = self.utxo_contract
-            .deposit(token, value)
+    async fn deposit(&self, token_address: Address, data: Output) -> Result<(),Error<M>> {
+        let result = self.utxo_contract
+            .deposit(token_address, vec!(data.into()))
             .call()
             .await
             .map_err(|err| Error::ListUTXO(err))?;
-    
-            Ok(result)
-        }
+        Ok(result)
+    }
 
     async fn utxos_by_address(
         &self,
@@ -142,7 +139,7 @@ impl Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
                     Provider::<Http>::try_from(rpc_url.as_str())?,
                     LocalWallet::from_str(priv_key.as_str())?,
                 )
-                .await?,
+                    .await?,
             ),
         );
 
@@ -150,18 +147,17 @@ impl Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(target_arch = "wasm32", async_trait(? Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl Contract for Connector<Provider<Http>> {
     type Error = Error<Provider<Http>>;
 
-        async fn deposit(
+    async fn deposit(
         &self,
         address: Address,
-        amount: U256,
-        owner: Address,
-    ) -> Result<H256, Self::Error> {
-        self.deposit(address, amount, owner)
+        data: Output,
+    ) -> Result<(), Self::Error> {
+        self.deposit(address, data).await
     }
 
     async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error> {
@@ -185,7 +181,7 @@ impl Contract for Connector<Provider<Http>> {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(target_arch = "wasm32", async_trait(? Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     type Error = Error<SignerMiddleware<Provider<Http>, LocalWallet>>;
@@ -193,6 +189,15 @@ impl Contract for Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
     async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error> {
         self.utxos_by_id(utxo_id).await
     }
+
+    async fn deposit(
+        &self,
+        address: Address,
+        data: Output,
+    ) -> Result<(), Self::Error> {
+        self.deposit(address, data).await
+    }
+
 
     async fn list_utxos_by_address(
         &self,
