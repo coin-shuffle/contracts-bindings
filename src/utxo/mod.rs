@@ -59,6 +59,7 @@ where
     
             Ok(result)
         }
+
     async fn utxos_by_address(
         &self,
         address: Address,
@@ -162,7 +163,6 @@ impl Contract for Connector<Provider<Http>> {
     ) -> Result<H256, Self::Error> {
         self.deposit(address, amount, owner)
     }
-
 
     async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error> {
         self.utxos_by_id(utxo_id).await
