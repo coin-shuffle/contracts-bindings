@@ -26,6 +26,8 @@ pub trait Contract {
 
     async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error>;
 
+    async fn deposit(&self, token_address: Address, amount: U256, owner: Address) -> Result<H256, Self::Error>;
+
     async fn list_utxos_by_address(
         &self,
         address: Address,
@@ -46,6 +48,17 @@ impl<M> Connector<M>
 where
     M: Middleware,
 {
+
+    async fn deposit(&self, token_address: Address, amount: U256, owner: Address) -> Result<Vec<M>, Self::Error> {
+            let value = vec!(Output(amount, owner));
+            let result = self.utxo_contract
+            .deposit(token, value)
+            .call()
+            .await
+            .map_err(|err| Error::ListUTXO(err))?;
+    
+            Ok(result)
+        }
     async fn utxos_by_address(
         &self,
         address: Address,
@@ -140,6 +153,16 @@ impl Connector<SignerMiddleware<Provider<Http>, LocalWallet>> {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl Contract for Connector<Provider<Http>> {
     type Error = Error<Provider<Http>>;
+
+        async fn deposit(
+        &self,
+        address: Address,
+        amount: U256,
+        owner: Address,
+    ) -> Result<H256, Self::Error> {
+        self.deposit(address, amount, owner)
+    }
+
 
     async fn get_utxo_by_id(&self, utxo_id: U256) -> Result<Option<Utxo>, Self::Error> {
         self.utxos_by_id(utxo_id).await
